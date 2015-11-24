@@ -2,6 +2,12 @@
 #define __STRING__
 
 #include <cstddef>
+//#include <std/straits.h>
+#include <string>	// for simplicity, use std::char_traits instead of string_char_traits
+
+// NOTE : This does NOT conform to the draft standard and is likely to change
+//#include <alloc.h>
+#include <memory>	// for simplicity, use std::allocator instead of alloc
 
 #include <iterator>
 
@@ -23,15 +29,18 @@ do { if (cond) __length_error (#cond); } while (0)
 
 #endif
 
-#include <iterator>
-
-template <class charT, class traits /* = string_char_traits<charT> */,
-	 class Allocator /* = alloc */ >
-	 class basic_string
+//template <class charT, class traits = string_char_traits<charT>,
+//	  class Allocator = alloc >
+template <class charT, class traits = std::char_traits<charT>, class Allocator = std::allocator<charT>>
+class basic_string
 {
 private:
 	struct Rep {
 		// static Rep basic_string::nilRep = { 0, 0, 1, false };
+		// nilRep.len = 0;
+		// nilRep.res = 0;
+		// nilRep.ref = 1;
+		// nilRep.selfish = false;
 
 		size_t len, res, ref;
 		bool selfish;
@@ -106,67 +115,106 @@ public:
 		return *this;
 	}
 
-	explicit basic_string (): dat (nilRep.grab ()) { }
-	basic_string (const basic_string& str): dat (str.rep ()->grab ()) { }
-	basic_string (const basic_string& str, size_type pos, size_type n = npos)
-	: dat (nilRep.grab ()) { assign (str, pos, n); }
-	basic_string (const charT* s, size_type n)
-	: dat (nilRep.grab ()) { assign (s, n); }
-	basic_string (const charT* s)
-	: dat (nilRep.grab ()) { assign (s); }
-	basic_string (size_type n, charT c)
-	: dat (nilRep.grab ()) { assign (n, c); }
+	explicit basic_string () : dat (nilRep.grab ()) {
+	}
+
+	basic_string (const basic_string& str) : dat (str.rep ()->grab ()) {
+	}
+
+	basic_string (const basic_string& str, size_type pos, size_type n = npos) : dat (nilRep.grab ()) {
+		assign (str, pos, n);
+	}
+
+	basic_string (const charT* s, size_type n) : dat (nilRep.grab ()) {
+		assign (s, n);
+	}
+
+	basic_string (const charT* s) : dat (nilRep.grab ()) {
+		assign (s);
+	}
+
+	basic_string (size_type n, charT c) : dat (nilRep.grab ()) {
+		assign (n, c);
+	}
+
 #ifdef __STL_MEMBER_TEMPLATES
 	template<class InputIterator>
 	basic_string(InputIterator begin, InputIterator end)
 #else
 	basic_string(const_iterator begin, const_iterator end)
 #endif
-	: dat (nilRep.grab ()) { assign (begin, end); }
+	: dat (nilRep.grab ()) {
+		assign (begin, end);
+	}
 
-	~basic_string ()
-	{ rep ()->release (); }
+	~basic_string () {
+		rep ()->release ();
+	}
 
-	void swap (basic_string &s) { charT *d = dat; dat = s.dat; s.dat = d; }
+	void swap (basic_string &s) {
+		charT *d = dat; dat = s.dat; s.dat = d;
+	}
 
 	basic_string& append (const basic_string& str, size_type pos = 0,
-			size_type n = npos)
-	{ return replace (length (), 0, str, pos, n); }
-	basic_string& append (const charT* s, size_type n)
-	{ return replace (length (), 0, s, n); }
-	basic_string& append (const charT* s)
-	{ return append (s, traits::length (s)); }
-	basic_string& append (size_type n, charT c)
-	{ return replace (length (), 0, n, c); }
+			size_type n = npos) {
+		return replace (length (), 0, str, pos, n);
+	}
+
+	basic_string& append (const charT* s, size_type n) {
+		return replace (length (), 0, s, n);
+	}
+
+	basic_string& append (const charT* s) {
+		return append (s, traits::length (s));
+	}
+	basic_string& append (size_type n, charT c) {
+		return replace (length (), 0, n, c);
+	}
+
 #ifdef __STL_MEMBER_TEMPLATES
 	template<class InputIterator>
 	basic_string& append(InputIterator first, InputIterator last)
 #else
 	basic_string& append(const_iterator first, const_iterator last)
 #endif
-	{ return replace (iend (), iend (), first, last); }
+	{
+		return replace (iend (), iend (), first, last);
+	}
 
 	basic_string& assign (const basic_string& str, size_type pos = 0,
-			size_type n = npos)
-	{ return replace (0, npos, str, pos, n); }
-	basic_string& assign (const charT* s, size_type n)
-	{ return replace (0, npos, s, n); }
-	basic_string& assign (const charT* s)
-	{ return assign (s, traits::length (s)); }
-	basic_string& assign (size_type n, charT c)
-	{ return replace (0, npos, n, c); }
+			size_type n = npos) {
+		return replace (0, npos, str, pos, n);
+	}
+
+	basic_string& assign (const charT* s, size_type n) {
+		return replace (0, npos, s, n);
+	}
+
+	basic_string& assign (const charT* s) {
+		return assign (s, traits::length (s));
+	}
+
+	basic_string& assign (size_type n, charT c) {
+		return replace (0, npos, n, c);
+	}
+
 #ifdef __STL_MEMBER_TEMPLATES
 	template<class InputIterator>
 	basic_string& assign(InputIterator first, InputIterator last)
 #else
 	basic_string& assign(const_iterator first, const_iterator last)
 #endif
-	{ return replace (ibegin (), iend (), first, last); }
+	{
+		return replace (ibegin (), iend (), first, last);
+	}
 
-	basic_string& operator= (const charT* s)
-	{ return assign (s); }
-	basic_string& operator= (charT c)
-	{ return assign (1, c); }
+	basic_string& operator= (const charT* s) {
+		return assign (s);
+	}
+
+	basic_string& operator= (charT c) {
+		return assign (1, c);
+	}
 
 	basic_string& operator+= (const basic_string& rhs)
 	{ return append (rhs); }
@@ -1091,10 +1139,7 @@ template <class charT, class traits, class Allocator>
 const typename basic_string <charT, traits, Allocator>::size_type
 basic_string <charT, traits, Allocator>::npos;
 
-// add 2015.11.23
-#include <string>
-#include <memory>
-
-typedef basic_string <char, std::char_traits<char>, std::allocator<char> > string;
+typedef basic_string <char> string;
+// typedef basic_string <wchar_t> wstring;
 
 #endif
