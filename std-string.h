@@ -3,7 +3,6 @@
 
 #include <cstddef>
 
-// add on 2015.11.24
 #include <iterator>
 
 #ifdef __STL_USE_EXCEPTIONS
@@ -32,12 +31,20 @@ template <class charT, class traits /* = string_char_traits<charT> */,
 {
 private:
 	struct Rep {
+		// static Rep basic_string::nilRep = { 0, 0, 1, false };
+
 		size_t len, res, ref;
 		bool selfish;
 
 		charT* data () { return reinterpret_cast<charT *>(this + 1); }
 		charT& operator[] (size_t s) { return data () [s]; }
-		charT* grab () { if (selfish) return clone (); ++ref; return data (); }
+		charT* grab () {
+			if (selfish) {
+				return clone ();
+			}
+			++ref;
+			return data ();
+		}
 		void release () { if (--ref == 0) delete this; }
 
 		inline static void * operator new (size_t, size_t);
@@ -981,13 +988,20 @@ compare (const charT* s, size_type pos, size_type n) const
 	return (length () - pos) - n;
 }
 
+// 2015.11.23
+//#include <iostream.h>
 #include <iostream>
+
+// TODO: upgrade string input using C++11
+// istream >> string and getline(istream, string)
 
 //template <class charT, class traits, class Allocator>
 //std::istream &
 //operator>> (std::istream &is, basic_string <charT, traits, Allocator> &s)
 //{
 //  int w = is.width (0);
+//  // 2015.11.24
+//  // in C++11, maybe could use sentry class instead of ipfx*()
 //  if (is.ipfx0 ())
 //    {
 //      register streambuf *sb = is.rdbuf ();
@@ -1068,6 +1082,7 @@ operator<< (std::ostream &o, const basic_string <charT, traits, Allocator>& s)
 //  return is;
 //}
 
+// define basic_string static members
 template <class charT, class traits, class Allocator>
 typename basic_string <charT, traits, Allocator>::Rep
 basic_string<charT, traits, Allocator>::nilRep = { 0, 0, 1, false };
