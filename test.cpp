@@ -1,7 +1,7 @@
 #include "std-string.h"
 
 int main() {
-	string s("012");
+	string s("a");
 	auto len = s.length();
 	std::cout << len << std::endl;
 

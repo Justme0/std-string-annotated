@@ -42,8 +42,12 @@ private:
 		// nilRep.ref = 1;
 		// nilRep.selfish = false;
 
+		// len is length of string, include '\0'?
+		// res is reserved space length
+		// ref is reference count
 		size_t len, res, ref;
-		bool selfish;
+
+		bool selfish;	// TODO: ?
 
 		charT* data () { return reinterpret_cast<charT *>(this + 1); }
 		charT& operator[] (size_t s) { return data () [s]; }
@@ -666,7 +670,7 @@ inline typename basic_string <charT, traits, Allocator>::Rep *
 basic_string <charT, traits, Allocator>::Rep::
 create (size_t extra)
 {
-	extra = frob_size (extra + 1);
+	extra = frob_size (extra + 1);	// frob_size is 16, 32 or 64...
 	Rep *p = new (extra) Rep;
 	p->res = extra;
 	p->ref = 1;
@@ -763,22 +767,20 @@ basic_string <charT, traits, Allocator>::
 replace (size_type pos, size_type n1, const charT* s, size_type n2)
 {
 	const size_type len = length ();
-	OUTOFRANGE (pos > len);
-	if (n1 > len - pos)
+	OUTOFRANGE (pos > len);	// assert(pos <= len)
+	if (n1 > len - pos) {	// when n1 <= len - pos ?
 		n1 = len - pos;
+	}
 	LENGTHERROR (len - n1 > max_size () - n2);
 	size_t newlen = len - n1 + n2;
 
-	if (check_realloc (newlen))
-	{
+	if (check_realloc (newlen)) {
 		Rep *p = Rep::create (newlen);
 		p->copy (0, data (), pos);
 		p->copy (pos + n2, data () + pos + n1, len - (pos + n1));
 		p->copy (pos, s, n2);
 		repup (p);
-	}
-	else
-	{
+	} else {
 		rep ()->move (pos + n2, data () + pos + n1, len - (pos + n1));
 		rep ()->copy (pos, s, n2);
 	}
