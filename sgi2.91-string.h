@@ -3,11 +3,12 @@
 
 #include <cstddef>
 //#include <std/straits.h>
-#include <string>	// for simplicity, use std::char_traits instead of string_char_traits
+#include "straits.h"
 
 // NOTE : This does NOT conform to the draft standard and is likely to change
 //#include <alloc.h>
-#include <memory>	// for simplicity, use std::allocator instead of alloc
+//#include <memory>	// for simplicity, use std::allocator instead of alloc
+#include <bits/allocator.h>
 
 #include <iterator>
 
@@ -31,7 +32,7 @@ do { if (cond) __length_error (#cond); } while (0)
 
 //template <class charT, class traits = string_char_traits<charT>,
 //	  class Allocator = alloc >
-template <class charT, class traits = std::char_traits<charT>, class Allocator = std::allocator<charT>>
+template <class charT, class traits = string_char_traits<charT>, class Allocator = std::allocator<charT>>
 class basic_string
 {
 private:
@@ -254,14 +255,17 @@ public:
 
 	basic_string& erase (size_type pos = 0, size_type n = npos)
 	{ return replace (pos, n, (size_type)0, (charT)0); }
-	iterator erase(iterator p)
-	{ size_type __o = p - begin();
+	iterator erase(iterator p) {
+		size_type __o = p - begin();
 		replace (__o, 1, (size_type)0, (charT)0); selfish ();
-		return ibegin() + __o; }
-	iterator erase(iterator f, iterator l)
-	{ size_type __o = f - ibegin();
+		return ibegin() + __o;
+	}
+
+	iterator erase(iterator f, iterator l) {
+		size_type __o = f - ibegin();
 		replace (__o, l-f, (size_type)0, (charT)0);selfish ();
-		return ibegin() + __o; }
+		return ibegin() + __o;
+	}
 
 	basic_string& replace (size_type pos1, size_type n1, const basic_string& str,
 			size_type pos2 = 0, size_type n2 = npos);
@@ -290,43 +294,68 @@ public:
 #endif
 
 private:
-	static charT eos () { return traits::eos (); }
-	void unique () { if (rep ()->ref > 1) alloc (length (), true); }
-	void selfish () { unique (); rep ()->selfish = true; }
+	static charT eos () {
+		return traits::eos ();
+	}
+
+	void unique () {
+		if (rep ()->ref > 1) {
+			alloc (length (), true);
+		}
+	}
+
+	void selfish () {
+		unique ();
+		rep ()->selfish = true;
+	}
 
 public:
-	charT operator[] (size_type pos) const
-	{
-		if (pos == length ())
+	charT operator[] (size_type pos) const {
+		if (pos == length ()) {
 			return eos ();
+		}
+
 		return data ()[pos];
 	}
 
-	reference operator[] (size_type pos)
-	{ selfish (); return (*rep ())[pos]; }
+	reference operator[] (size_type pos) {
+		selfish ();
 
-	reference at (size_type pos)
-	{
+		return (*rep ())[pos];
+	}
+
+	reference at (size_type pos) {
 		OUTOFRANGE (pos >= length ());
+
 		return (*this)[pos];
 	}
-	const_reference at (size_type pos) const
-	{
+
+	const_reference at (size_type pos) const {
 		OUTOFRANGE (pos >= length ());
+
 		return data ()[pos];
 	}
 
 private:
-	void terminate () const
-	{ traits::assign ((*rep ())[length ()], eos ()); }
+	void terminate () const {
+		traits::assign ((*rep ())[length ()], eos ());
+	}
 
 public:
-	const charT* c_str () const
-	{ if (length () == 0) return ""; terminate (); return data (); }
+	const charT* c_str () const {
+		if (length () == 0) return "";
+		terminate ();
+		return data ();
+	}
+
 	void resize (size_type n, charT c);
-	void resize (size_type n)
-	{ resize (n, eos ()); }
-	void reserve (size_type) { }
+
+	void resize (size_type n) {
+		resize (n, eos ());
+	}
+
+	void reserve (size_type) {
+	}
 
 	size_type copy (charT* s, size_type n, size_type pos = 0) const;
 
@@ -776,9 +805,9 @@ replace (size_type pos, size_type n1, const charT* s, size_type n2)
 
 	if (check_realloc (newlen)) {
 		Rep *p = Rep::create (newlen);
-		p->copy (0, data (), pos);
-		p->copy (pos + n2, data () + pos + n1, len - (pos + n1));
-		p->copy (pos, s, n2);
+		p->copy (0, data (), pos);	// copy src[0, pos) to [0, pos)
+		p->copy (pos + n2, data () + pos + n1, len - (pos + n1));	// copy src[pos+n1, len) to [pos+n2, len+n1-n2)
+		p->copy (pos, s, n2);	// copy s[0, n2) to [pos, pos+n2)
 		repup (p);
 	} else {
 		rep ()->move (pos + n2, data () + pos + n1, len - (pos + n1));
